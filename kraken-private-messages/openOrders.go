@@ -53,6 +53,7 @@ func (os orders) Combine(oss ...orders) (combined orders, err error) {
 }
 
 func (api *API) subscribeToOpenOrders(token token) error {
+	api.openOrdersChannel = make(chan orders)
 	payload := fmt.Sprintf("{\"event\": \"subscribe\", \"subscription\": {\"name\": \"openOrders\", \"token\": \"%s\"}}", token)
 	err := api.client.WriteMessage(1, []byte(payload))
 	if err != nil {
@@ -68,10 +69,10 @@ func (api *API) handleOpenOrdersMessage(msg []byte) error {
 
 	var resp []interface{}
 	if err := json.Unmarshal(msg, &resp); err != nil {
-		return err
+		return nil
 	}
 	if len(resp) < 3 || resp[1] != "openOrders" {
-		return errors.New("not openOrders")
+		return nil
 	}
 	api.openOrdersMessageLock.Lock()
 	defer api.openOrdersMessageLock.Unlock()
@@ -89,5 +90,6 @@ func (api *API) handleOpenOrdersMessage(msg []byte) error {
 	}
 
 	fmt.Printf("%v\n", allOs)
+	api.openOrdersChannel <- allOs
 	return nil
 }

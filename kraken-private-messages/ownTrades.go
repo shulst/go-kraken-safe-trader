@@ -53,6 +53,8 @@ func (ts trades) Combine(cTss ...trades) (combined trades, err error) {
 }
 
 func (api *API) subscribeToOwnTrades(token token) error {
+	api.ownTradesChannel = make(chan trades)
+
 	payload := fmt.Sprintf("{\"event\": \"subscribe\", \"subscription\": {\"name\": \"ownTrades\", \"token\": \"%s\"}}", token)
 	err := api.client.WriteMessage(1, []byte(payload))
 	if err != nil {
@@ -68,10 +70,10 @@ func (api *API) handleOwnTradeMessage(msg []byte) error {
 
 	var resp []interface{}
 	if err := json.Unmarshal(msg, &resp); err != nil {
-		return err
+		return nil
 	}
 	if len(resp) < 3 || resp[1] != "ownTrades" {
-		return errors.New("not ownTrades")
+		return nil
 	}
 	api.ownTradesMessageLock.Lock()
 	defer api.ownTradesMessageLock.Unlock()
@@ -89,5 +91,6 @@ func (api *API) handleOwnTradeMessage(msg []byte) error {
 	}
 
 	fmt.Printf("%v\n", allTs)
+	api.ownTradesChannel <- allTs
 	return nil
 }

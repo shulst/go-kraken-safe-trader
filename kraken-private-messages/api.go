@@ -9,7 +9,8 @@ import (
 
 type API struct {
 	client                *websocket.Conn
-	ownTradesChannel      chan []trade
+	ownTradesChannel      chan trades
+	openOrdersChannel     chan orders
 	ownTradesMessageLock  sync.RWMutex
 	openOrdersMessageLock sync.RWMutex
 }

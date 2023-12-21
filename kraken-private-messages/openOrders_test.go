@@ -2,6 +2,7 @@ package kraken_private_messages
 
 import (
 	"github.com/shulst/go-kraken-safe-trader/kraken-private-messages/config"
+	"log"
 	"testing"
 )
 
@@ -20,5 +21,15 @@ func TestKrakenOpenOrders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	openOrdersChan := api.openOrdersChannel
+	go listenOrders(openOrdersChan)
+
 	api.listen()
+}
+
+func listenOrders(ch chan orders) {
+	for openOrders := range ch {
+		log.Printf("%v\n", openOrders)
+	}
 }

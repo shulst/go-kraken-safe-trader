@@ -2,6 +2,7 @@ package kraken_private_messages
 
 import (
 	"github.com/shulst/go-kraken-safe-trader/kraken-private-messages/config"
+	"log"
 	"testing"
 )
 
@@ -20,5 +21,15 @@ func TestKrakenOwnTrades(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	ownTrades := api.ownTradesChannel
+	go listenOwnTrades(ownTrades)
+
 	api.listen()
+}
+
+func listenOwnTrades(ch chan trades) {
+	for ownTrades := range ch {
+		log.Printf("%v\n", ownTrades)
+	}
 }
