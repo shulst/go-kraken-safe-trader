@@ -2,36 +2,63 @@ package kraken_private_messages
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"time"
 )
+
+// Order example:
+//
+//	{
+//	  "OI3VWZ-XVFKD-42NHKO": {
+//		"avg_price": "0.00000",
+//		"cost": "0.00000",
+//		"descr": {
+//		  "close": "",
+//		  "leverage": "",
+//		  "order": "sell 264.80262516 DYDX/EUR @ limit 3.66900",
+//		  "ordertype": "limit",
+//		  "pair": "DYDX/EUR",
+//		  "price": "3.66900",
+//		  "price2": "0.00000",
+//		  "type": "sell"
+//		},
+//		"expiretm": "",
+//		"fee": "0.00000",
+//		"stopprice": "0.00000",
+//		"limitprice": "0.00000",
+//		"misc": "",
+//		"oflags": "fciq",
+//		"timeinforce": "GTC",
+//		"cancel_reason": "",
+//		"ratecount": ""
+//	  }, ...
+//	}
 
 type OrderDesc struct {
 	Close     price  `json:"close"`
 	Leverage  string `json:"leverage"`
 	Order     string `json:"order"`
 	OrderType string `json:"ordertype"`
-	Pair      string `json:"pair"`
+	Pair      pair   `json:"pair"`
 	Price     price  `json:"price"`
 	Price2    price  `json:"price2"`
 	Type      string `json:"type"`
 }
 
 type order struct {
-	AvgPrice     price     `json:"avg_price"`
-	Cost         price     `json:"cost"`
-	Descr        OrderDesc `json:"descr"`
-	ExpireUTime  unixTime  `json:"expiretm"`
-	Fee          price     `json:"fee"`
-	StopPrice    price     `json:"stopprice"`
-	LimitPrice   price     `json:"limitprice"`
-	Misc         string    `json:"misc"`
-	Oflags       string    `json:"oflags"`
-	TimeInforce  unixTime  `json:"timeinforce"`
-	CancelReason string    `json:"cancel_reason"`
-	RateCount    string    `json:"ratecount"`
+	AvgPrice     price        `json:"avg_price"`
+	Cost         price        `json:"cost"`
+	Descr        OrderDesc    `json:"descr"`
+	ExpireUTime  unixTime     `json:"expiretm"`
+	Fee          price        `json:"fee"`
+	StopPrice    price        `json:"stopprice"`
+	LimitPrice   price        `json:"limitprice"`
+	Misc         string       `json:"misc"`
+	Oflags       string       `json:"oflags"`
+	TimeInforce  unixTime     `json:"timeinforce"`
+	CancelReason cancelReason `json:"cancel_reason"`
+	RateCount    string       `json:"ratecount"`
 }
 type orders map[string]order
 
@@ -42,11 +69,7 @@ func (os orders) Combine(oss ...orders) (combined orders, err error) {
 	}
 	for _, oo := range oss {
 		for key, o := range oo {
-			if _, ok := combined[key]; !ok {
-				combined[key] = o
-			} else {
-				return nil, errors.New(fmt.Sprintf("duplicate key %s", key))
-			}
+			combined[key] = o
 		}
 	}
 	return
@@ -84,12 +107,12 @@ func (api *API) handleOpenOrdersMessage(msg []byte) error {
 	if err := json.Unmarshal(res, &os); err != nil {
 		return err
 	}
-	allOs, err := os[0].Combine(os[1:]...)
+	combined, err := os[0].Combine(os[1:]...)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%v\n", allOs)
-	api.openOrdersChannel <- allOs
+	fmt.Printf("%v\n", combined)
+	api.openOrdersChannel <- combined
 	return nil
 }

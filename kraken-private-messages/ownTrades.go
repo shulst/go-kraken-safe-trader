@@ -2,30 +2,17 @@ package kraken_private_messages
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 )
-
-type unixTime string
-
-func (u unixTime) Time() time.Time {
-	i, _ := strconv.ParseFloat(string(u), 64)
-	return time.Unix(int64(i), 0)
-}
-
-type price string
-type vol string
-type margin string
 
 type trade struct {
 	PostXId   string   `json:"postxid"`
 	OrderTXId string   `json:"ordertxid"`
 	OrderType string   `json:"ordertype"`
 	UTime     unixTime `json:"time"`
-	Pair      string   `json:"pair"`
+	Pair      pair     `json:"pair"`
 	Type      string   `json:"type"`
 	Price     price    `json:"price"`
 	Cost      price    `json:"cost"`
@@ -42,11 +29,7 @@ func (ts trades) Combine(cTss ...trades) (combined trades, err error) {
 	}
 	for _, cts := range cTss {
 		for key, ct := range cts {
-			if _, ok := combined[key]; !ok {
-				combined[key] = ct
-			} else {
-				return nil, errors.New(fmt.Sprintf("duplicate key %s", key))
-			}
+			combined[key] = ct
 		}
 	}
 	return

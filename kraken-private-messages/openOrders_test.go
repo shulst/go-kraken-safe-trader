@@ -1,6 +1,7 @@
 package kraken_private_messages
 
 import (
+	"encoding/json"
 	"github.com/shulst/go-kraken-safe-trader/kraken-private-messages/config"
 	"log"
 	"testing"
@@ -30,6 +31,7 @@ func TestKrakenOpenOrders(t *testing.T) {
 
 func listenOrders(ch chan orders) {
 	for openOrders := range ch {
-		log.Printf("%v\n", openOrders)
+		msg, _ := json.MarshalIndent(openOrders, "", "  ")
+		log.Printf("%s\n", msg)
 	}
 }
